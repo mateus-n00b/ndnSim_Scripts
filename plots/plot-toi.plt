@@ -10,7 +10,8 @@
 #set terminal pdf
 set terminal postscript eps color "Times" 20
 set encoding utf8
-set output 'hightoi.eps'
+set termoption enhanced
+set output 'urbanfdp.eps'
 
 set grid ytics lt 0 lw 1 lc rgb "#cccccc"
 set grid xtics lt 0 lw 1 lc rgb "#cccccc"
@@ -26,16 +27,16 @@ set ytics 200
 
 set xrange [22:102]
 set yrange [0:1000]
-#high_pdr.dat
-#high_pdr.dat
-plot "hightoi.dat" using 1:2:3:4  title "Naive Multicast" with linespoints ls 1,\
-"hightoi.dat" using 1:2:3:4 notitle with yerrorbars ls 1,\
+#urban_pdr.dat
+#urban_pdr.dat
+plot "urbanfdp.dat" using 1:2:3:4  title "Naive Best-Route" with linespoints ls 1,\
+"urbanfdp.dat" using 1:2:3:4 notitle with yerrorbars ls 1,\
 1 / 0 notitle  smooth csplines with lines ls 1,\
 \
-"hightoi.dat" using 1:5:6:7 title "Naive Best-Route" with linespoints ls 2,\
-"hightoi.dat" using 1:5:6:7 notitle w yerrorbars ls 2,\
+"urbanfdp.dat" using 1:5:6:7 title "Naive Multicast" with linespoints ls 2,\
+"urbanfdp.dat" using 1:5:6:7 notitle w yerrorbars ls 2,\
 2 / 0 notitle  smooth csplines with lines ls 2,\
 \
-"hightoi.dat" using 1:8:9:10 title "LSIF" with linespoints ls 3,\
-"hightoi.dat" using 1:8:9:10 notitle w yerrorbars ls 3,\
+"urbanfdp.dat" using 1:8:9:10 title "LSIF with {/Symbol a}=5" with linespoints ls 3,\
+"urbanfdp.dat" using 1:8:9:10 notitle w yerrorbars ls 3,\
 2 / 0 notitle  smooth csplines with lines ls 3
