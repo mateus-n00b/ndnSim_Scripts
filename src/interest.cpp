@@ -87,26 +87,64 @@ Interest::setNonce(uint32_t nonce)
   return *this;
 }
 
+////////////////////////////////////
 // Mateus UFBA-Brazil-2017
-void
+////////////////////////////////////
+Interest&
 Interest::setNextForwarder(uint32_t next) {
-  m_nextForwarder = next;
+  if (m_wire.hasWire() && m_nextForwarder.value_size() == sizeof(uint32_t)) {
+    std::memcpy(const_cast<uint8_t*>(m_nextForwarder.value()), &next, sizeof(next));
+  }
+  else {
+    m_nextForwarder = makeBinaryBlock(tlv::NextForwarder,
+                              reinterpret_cast<const uint8_t*>(&next),
+                              sizeof(next));
+    m_wire.reset();
+  }
+  return *this;
 }
 
 uint32_t
-Interest::getNextForwarder(){
-  return m_nextForwarder;
+Interest::getNextForwarder() const{
+  if (!m_nextForwarder.hasWire())
+    const_cast<Interest*>(this)->setNextForwarder(99999);
+
+  if (m_nextForwarder.value_size() == sizeof(uint32_t))
+    return *reinterpret_cast<const uint32_t*>(m_nextForwarder.value());
+  else {
+    return readNonNegativeInteger(m_nextForwarder);
+  }
 }
 
-void
+Interest&
 Interest::setLastForwarder(uint32_t last) {
-  m_lastForwarder = last;
+  if (m_wire.hasWire() && m_lastForwarder.value_size() == sizeof(uint32_t)) {
+    std::memcpy(const_cast<uint8_t*>(m_lastForwarder.value()), &last, sizeof(last));
+  }
+  else {
+    m_lastForwarder = makeBinaryBlock(tlv::LastForwarder,
+                              reinterpret_cast<const uint8_t*>(&last),
+                              sizeof(last));
+    m_wire.reset();
+  }
+  return *this;
 }
 
 uint32_t
-Interest::getLastForwarder(){
-  return m_lastForwarder;
+Interest::getLastForwarder() const{
+  if (!m_lastForwarder.hasWire())
+    const_cast<Interest*>(this)->setLastForwarder(99999);
+
+  if (m_lastForwarder.value_size() == sizeof(uint32_t))
+    return *reinterpret_cast<const uint32_t*>(m_lastForwarder.value());
+  else {
+    return readNonNegativeInteger(m_lastForwarder);
+  }
 }
+//////////////////////////////////////////////////////
+//                  END MATEUS
+//////////////////////////////////////////////////////
+
 
 void
 Interest::refreshNonce()
@@ -274,18 +312,16 @@ Interest::wireEncode(EncodingImpl<TAG>& encoder) const
   getNonce(); // to ensure that Nonce is properly set
   totalLength += encoder.prependBlock(m_nonce);
 
-  //
+  //////////////////////////////////////////////////
   // My modifications (Mateus)
-  //
-  // LastForwarder (Mateus)
-  totalLength += prependNonNegativeIntegerBlock(encoder,
-                                tlv::NextForwarder,
-                                m_nextForwarder);                                
-  // NextForwarder
-  totalLength += prependNonNegativeIntegerBlock(encoder,
-                                tlv::LastForwarder,
-                                m_lastForwarder);
-
+  //////////////////////////////////////////////////
+  getNextForwarder();
+  getLastForwarder();
+  totalLength += encoder.prependBlock(m_lastForwarder);
+  totalLength += encoder.prependBlock(m_nextForwarder);
+  //////////////////////////////////////////////////
+  //                  END MATEUS
+  //////////////////////////////////////////////////
 
 
 
@@ -356,21 +392,19 @@ Interest::wireDecode(const Block& wire)
   else
     m_selectors = Selectors();
 
-  // Nonce
-  m_nonce = m_wire.get(tlv::Nonce);
-
   ////////////////////////////////////////
   // Mateus UFBA-Brazil-2017
   ////////////////////////////////////////
   // NextForwarder
-  Block::element_const_iterator next = m_wire.find(tlv::NextForwarder);
-  if (next != m_wire.elements_end()) // && val_count->type() == tlv::CountAccessData) {
-      m_nextForwarder = readNonNegativeInteger(*next);
+  m_nextForwarder = m_wire.get(tlv::NextForwarder);
+  m_lastForwarder = m_wire.get(tlv::LastForwarder);
 
-  Block::element_const_iterator last = m_wire.find(tlv::LastForwarder);
-  if (last != m_wire.elements_end()) // && val_count->type() == tlv::CountAccessData) {
-    m_lastForwarder = readNonNegativeInteger(*last);
-   ////////////////////////////////////////
+  ////////////////////////////////////////
+  //          END MATEUS
+  ////////////////////////////////////////
+
+  // Nonce
+  m_nonce = m_wire.get(tlv::Nonce);
 
 
   // InterestLifetime
@@ -528,6 +562,10 @@ operator<<(std::ostream& os, const Interest& interest)
     os << delim << "ndn.Nonce=" << interest.getNonce();
     delim = '&';
   }
+
+  os << delim << "ndn.LastForwarder" << interest.getLastForwarder(); // Mateus
+  os << delim << "ndn.NextForwarder" << interest.getNextForwarder(); // X-
+
   if (!interest.getExclude().empty()) {
     os << delim << "ndn.Exclude=" << interest.getExclude();
     delim = '&';

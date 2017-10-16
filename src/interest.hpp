@@ -262,11 +262,15 @@ public: // Name and guiders
   Interest&
   setNonce(uint32_t nonce);
 
-  void setLastForwarder(uint32_t last); // X- Mateus
-  uint32_t getLastForwarder(void); // X-
+  Interest&
+  setLastForwarder(uint32_t last); // X- Mateus
+  uint32_t
+  getLastForwarder() const; // X-
 
-  void setNextForwarder(uint32_t next); // X-
-  uint32_t getNextForwarder(void);// X-
+  Interest&
+  setNextForwarder(uint32_t next); // X-
+  uint32_t
+  getNextForwarder() const;// X-
 
 
   /** @brief Refresh nonce
@@ -405,14 +409,29 @@ private:
   Selectors m_selectors;
   mutable Block m_nonce;
   time::milliseconds m_interestLifetime;
-  uint32_t m_lastForwarder = 0;
-  uint32_t m_nextForwarder = 0;
+  mutable Block m_lastForwarder; // Mateus UFBA-Brazil-2017
+  mutable Block m_nextForwarder; // default value
 
   mutable Block m_link;
   mutable shared_ptr<Link> m_linkCached;
   size_t m_selectedDelegationIndex;
   mutable Block m_wire;
 };
+
+// // Mateus - UFBA-Brazil-2017
+// // X-
+// inline uint32_t
+// Interest::getNextForwarder() const
+// {
+//   return m_nextForwarder;
+// }
+//
+// inline uint32_t
+// Interest::getLastForwarder() const
+// {
+//   return m_lastForwarder;
+// }
+
 
 std::ostream&
 operator<<(std::ostream& os, const Interest& interest);
